@@ -20,7 +20,7 @@ int main() {
 	return 1;
   }
 
-  if (bind(server_socket_fd, (struct sockaddr *)&host_address, sizeof(host_address) == FAILED)) {
+  if (bind(server_socket_fd, (struct sockaddr *)&host_address, sizeof(host_address)) == FAILED) {
     perror("Couldn't bind a socket\n");
 	return 1;
   }
