@@ -1,36 +1,70 @@
+#include <endian.h>
 #include <stdio.h>
 #include <string.h>
+
 #include "../include/conf.h"
 
 void read_http_request(char *buffer) {
-  char method[BUFFER_FOR_READ];
-  char uri[BUFFER_FOR_READ];
-  char version[BUFFER_FOR_READ];
-  sscanf(buffer, "%s %s %s", method, uri, version);
+  char method[512];
+  char uri[512];
+  char version[512];
 
-  printf("%s\n", buffer);
+  size_t method_len = strcspn(buffer, " ");
+  if (memcmp(buffer, "GET", strlen("GET")) == 0) {
+    strcpy(method, "GET");
+  } else {
+    strcpy(method, "ANOTHER");
+  }
 
-  printf("Request:\n");
+  method[method_len] = '\0';
+  // move to the next item
+  buffer += method_len + 1;
+
+  size_t uri_len = strcspn(buffer, " ");
+  strncpy(uri, buffer, uri_len);
+  // move to the next item
+  buffer += uri_len + 1;
+  uri[uri_len] = '\0';
+
+  size_t version_len = strcspn(buffer, "\r\n");
+  strncpy(version, buffer, version_len);
+  buffer += version_len + 2;
+  version[version_len] = '\0';
   printf("%s %s %s\n", method, uri, version);
 
-  char *request_start, *header_start, *body_start;
+  while (buffer[0] != '\0' || buffer[0] != '\r' || buffer[1] != '\n') {
+    char name[512];
+    char value[512];
+    size_t name_len = strcspn(buffer, ":");
+    strncpy(name, buffer, name_len);
 
-  request_start = strstr(buffer, "\r\n\r\n");
+    name[name_len] = '\0';
+    // move from :
+    buffer += name_len + 1;
 
-  // TODO: check if not NULL
-  header_start = strstr(buffer, "\r\n\r\n");
-  header_start += 4;
+    // move until finds value of a header
+    while (*buffer == ' ') {
+      ++buffer;
+    }
 
-  printf("Headers:\n");
-  printf("%s\n", header_start);
+    size_t value_len = strcspn(buffer, "\r\n");
+	strncpy(value, buffer, value_len);
 
-  // TODO: check if not NULL
-  body_start = strstr(header_start, "\r\n");
+	value[value_len] = '\0';
+	buffer += value_len + 2;
 
-  printf("Body:\n");
-  if (body_start == NULL) {
-    printf("NO FUCKING BODY\n");
-  } else {
-    printf("%s\n", body_start);
+	printf("%s:%s\n", name, value);
   }
+
+  // get to new line to body
+  buffer += 2;
+
+  char body[512];
+  size_t body_len = strlen(buffer);
+  strncpy(body, buffer, body_len);
+
+  body[body_len] = '\0';
+
+  printf("%s\n", body);
+  
 }
