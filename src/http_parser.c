@@ -5,7 +5,7 @@
 #include <string.h>
 
 #include "../include/conf.h"
-#include "../include/types.h"
+#include "../include/http_types.h"
 
 void free_http_request(struct HTTP_REQUEST *http_request);
 

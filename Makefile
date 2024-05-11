@@ -1,5 +1,5 @@
 build:
-	cc src/queue.c src/http.c src/core.c src/main.c -o bin/server
+	cc src/request_queue.c src/http_parser.c src/core.c src/main.c -o bin/server
 
 run:
 	./bin/server

@@ -6,8 +6,8 @@
 
 #include "../include/conf.h"
 #include "../include/errors.h"
-#include "../include/http.h"
-#include "../include/queue.h"
+#include "../include/http_parser.h"
+#include "../include/request_queue.h"
 
 #include "../include/conf.h"
 
