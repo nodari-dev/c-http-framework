@@ -118,36 +118,43 @@ HTTP_REQUEST *read_http_request(char *buffer) {
   buffer += 2;
 
   //BODY
-
   size_t body_len = strlen(buffer);
 
-  if (body_len != 0) {
-    http_request->body = malloc(body_len + 1);
-    if (!http_request->body) {
-      printf("could not allocate memory for http body");
-      free_http_request(http_request);
-      return NULL;
-    }
-
-    memcpy(http_request->body, buffer, body_len);
-    http_request->body[body_len] = '\0';
-  }
+  // if (body_len != 0) {
+  //   http_request->body = malloc(body_len + 1);
+  //   if (!http_request->body) {
+  //     printf("could not allocate memory for http body");
+  //     free_http_request(http_request);
+  //     return NULL;
+  //   }
+  //
+  //   memcpy(http_request->body, buffer, body_len);
+  //   http_request->body[body_len] = '\0';
+  // }
   return http_request;
 }
 
+void free_header(struct HTTP_HEADER *header) {
+    if (header) {
+        free(header->name);
+        free(header->value);
+        free_header(header->next);
+        free(header);
+    }
+}
+
 void free_http_request(struct HTTP_REQUEST *http_request) {
-  free(http_request->uri);
-  free(http_request->version);
-  free(http_request->body);
+    if (http_request == NULL) {
+        return;
+    }
 
-  HTTP_HEADER *current = http_request->headers;
-  while (current) {
-    HTTP_HEADER *next = current->next;
-    free(current->name);
-    free(current->value);
-    free(current);
-    current = next;
-  }
+    free(http_request->uri);
+    free(http_request->version);
+    free(http_request->body);
+	free_header(http_request->headers);
 
-  free(http_request);
+    // Free headers in a loop
+    HTTP_HEADER *current = http_request->headers;
+
+    http_request = NULL;
 }
