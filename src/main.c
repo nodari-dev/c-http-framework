@@ -38,6 +38,7 @@ int main() {
   int counter = 1;
 
   struct Queue *request_queue = createQueue();
+
   char buffer[BUFFER_FOR_READ] =
       "PUT /index.html HTTP/1.1\r\n"
       "Host: www.example.com\r\n"
@@ -53,8 +54,20 @@ int main() {
       "\r\n"
       "This is the request body, if any.";
 
-  read_http_request(buffer);
-
+  HTTP_REQUEST *http_request = read_http_request(buffer);
+  if (http_request) {
+    printf("%d %s %s\n", http_request->method, http_request->uri,
+           http_request->version);
+    struct HTTP_HEADER *header = http_request->headers;
+    while (header) {
+      printf("%s: %s\n", header->name, header->value);
+      header = header->next;
+    }
+    printf("%s\n", http_request->body);
+  } else {
+    printf("%s\n", "parsing error");
+  }
+  //
   // while (1) {
   //
   //   struct sockaddr_in client_address;
@@ -74,8 +87,6 @@ int main() {
   //   if (read_result == FAILED) {
   //     perror("Failed reading message\n");
   //   }
-  //
-  // 	read_http_request(buffer);
   //
   //   enque(request_queue, counter);
   //
