@@ -2,6 +2,7 @@
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -54,39 +55,64 @@ int main() {
       continue;
     }
 
-    char* buffer = (char*)malloc(BUFFER_FOR_READ * sizeof(char));
-    if (buffer == NULL) {
-        perror("malloc");
-        return FAILED;
-    }
-	int read_result = recv(client_socket_fd, buffer, BUFFER_FOR_READ, 0);
-    if (read_result == FAILED) {
+	
+	char* buffer = NULL;
+	char temp_buffer[BUFFER_FOR_READ];
+	int total_buffer_size = 0;
+	int bytes_read;
+
+	// Read request until no bytes left and end of headers found
+	while ((bytes_read = recv(client_socket_fd, temp_buffer, BUFFER_FOR_READ - 1, 0)) > 0) {
+		temp_buffer[bytes_read] = 0;
+		buffer = realloc(buffer, total_buffer_size + bytes_read);
+		if(!buffer){
+			perror("new_buffer realloc");
+			close(client_socket_fd);
+		}
+
+		// copy new data into actual buffer
+		memcpy(buffer + total_buffer_size, temp_buffer, bytes_read);
+		// increase total size of a buffer
+		total_buffer_size += bytes_read;
+		buffer[total_buffer_size] = '\0';
+
+		// end of headers???
+		if(strstr(buffer, "\r\n\r\n")){
+			break;
+		}
+	}
+
+    if (bytes_read <= 0) {
       perror("Failed reading message\n");
+      free(buffer);
+      close(client_socket_fd);
+      continue;
     }
 
-    HTTP_REQUEST* http_request = read_http_request(buffer);
+    HTTP_REQUEST *http_request = read_http_request(buffer);
     if (http_request) {
       printf("%d %s %s\n", http_request->method, http_request->uri,
              http_request->version);
       struct HTTP_HEADER *header = http_request->headers;
-      // while (header) {
-      //   printf("%s: %s\n", header->name, header->value);
-      //   header = header->next;
-      // }
-      // if (http_request->body) {
-      //   printf("BODY: %s\n", http_request->body);
-      // }
+      while (header) {
+        printf("%s: %s\n", header->name, header->value);
+        header = header->next;
+      }
+      if (http_request->body) {
+        printf("%s\n", http_request->body);
+      }
     } else {
       printf("%s\n", "parsing error");
     }
 
     enque(request_queue, counter);
 
-	//  AFTER
-	free_http_request(http_request);
-	free(buffer);
-	//  AFTER
-	//
+    //  AFTER
+    free(buffer);
+    buffer = NULL;
+    free_http_request(http_request);
+    //  AFTER
+    //
     char response[2048];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
