@@ -10,6 +10,7 @@
 #include "../include/errors.h"
 #include "../include/http_parser.h"
 #include "../include/request_queue.h"
+#include "../include/request_reader.h"
 
 #include "../include/conf.h"
 
@@ -55,41 +56,12 @@ int main() {
       continue;
     }
 
-	
-	char* buffer = NULL;
-	char temp_buffer[BUFFER_FOR_READ];
-	int total_buffer_size = 0;
-	int bytes_read;
-
-	// Read request until no bytes left and end of headers found
-	while ((bytes_read = recv(client_socket_fd, temp_buffer, BUFFER_FOR_READ - 1, 0)) > 0) {
-		temp_buffer[bytes_read] = 0;
-		buffer = realloc(buffer, total_buffer_size + bytes_read);
-		if(!buffer){
-			perror("new_buffer realloc");
-			close(client_socket_fd);
-		}
-
-		// copy new data into actual buffer
-		memcpy(buffer + total_buffer_size, temp_buffer, bytes_read);
-		// increase total size of a buffer
-		total_buffer_size += bytes_read;
-		buffer[total_buffer_size] = '\0';
-
-		// end of headers???
-		if(strstr(buffer, "\r\n\r\n")){
-			break;
-		}
+	char* buffer = read_request(client_socket_fd);
+	if(buffer == NULL){
+      close(client_socket_fd);
 	}
 
-    if (bytes_read <= 0) {
-      perror("Failed reading message\n");
-      free(buffer);
-      close(client_socket_fd);
-      continue;
-    }
-
-    HTTP_REQUEST *http_request = read_http_request(buffer);
+    HTTP_REQUEST *http_request = parse_http_request(buffer);
     if (http_request) {
       printf("%d %s %s\n", http_request->method, http_request->uri,
              http_request->version);

@@ -10,7 +10,7 @@
 
 void free_http_request(struct HTTP_REQUEST *http_request);
 
-HTTP_REQUEST *read_http_request(char *buffer) {
+HTTP_REQUEST *parse_http_request(char *buffer) {
   HTTP_REQUEST *http_request = (struct HTTP_REQUEST*)malloc(sizeof(HTTP_REQUEST));
   if (!http_request) {
     perror("malloc http request");
