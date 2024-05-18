@@ -4,7 +4,7 @@ run:
 	./bin/server
 
 fun:
-	cc src/playground.c -o bin/playground
+	cc src/http_parser.c src/playground.c -o bin/playground
 	./bin/playground
 
 

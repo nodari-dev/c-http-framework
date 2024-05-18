@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "../include/http_types.h"
 
 struct Node{
 	struct Node *next;
-	int val;
+	struct HTTP_REQUEST* http_request;
 };
 
 struct Queue{
@@ -12,9 +13,13 @@ struct Queue{
 	struct Node *tail;
 };
 
-struct Node* createNode(int value){
+struct Node* createNode(struct HTTP_REQUEST* request){
 	struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-	newNode->val = value;
+	if(newNode == NULL){
+		perror("queue new node");
+		exit(1);
+	}
+	newNode->http_request = request;
 	newNode->next = NULL;
 	return newNode;
 }
@@ -27,44 +32,40 @@ struct Queue* createQueue(){
 	return queue;
 }
 
-void enque(struct Queue *queue, int value){
-	struct Node* newNode = createNode(value);
-	if(queue->tail == NULL){
+void enque(struct Queue *queue, struct HTTP_REQUEST* request){
+	struct Node* newNode = createNode(request);
+	if(queue->len == 0){
 		queue->head = queue->tail = newNode;
 		return;
 	}
-
+	queue->len++;
 	queue->tail->next = newNode;
 	queue->tail = newNode;
 }
 
-int deque(struct Queue *queue){
-	int result;
-	if(queue->head == NULL){
-		result = -1;
-	} else{
+struct HTTP_REQUEST* deque(struct Queue *queue){
+	struct HTTP_REQUEST* node = NULL;
+	if(queue->len > 0){
 		struct Node* temp = queue->head;
-		result = temp->val; 
+		node = temp->http_request; 
 		queue->head = queue->head->next;
 		if(queue->head == NULL){
 			queue->tail = NULL;
 		}
 		free(temp);
-	}
+		queue->len--;
+	} 
 
-	return result;
+	return node;
 }
 
-void monitor_queue(struct Queue *queue){
+void monitor_queue(struct Queue* queue){
 	struct Node *current = queue->head;
-
-	printf("Request queue\n");
+	int counter = 0;
 
 	while (current != NULL) {
-		printf("%d, ", current->val);
+		printf("Q[%d] %s\n", counter, current->http_request->uri);
 		current = current->next;
+		counter++;
 	}
-
-	printf("\n");
-
 }

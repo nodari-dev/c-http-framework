@@ -11,7 +11,6 @@
 #include "../include/http_parser.h"
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
-
 #include "../include/conf.h"
 
 int main() {
@@ -56,35 +55,24 @@ int main() {
       continue;
     }
 
-	char* buffer = read_request(client_socket_fd);
-	if(buffer == NULL){
+    char *buffer = read_request(client_socket_fd);
+    if (buffer == NULL) {
       close(client_socket_fd);
-	}
+    }
 
-    HTTP_REQUEST *http_request = parse_http_request(buffer);
-    if (http_request) {
-      printf("%d %s %s\n", http_request->method, http_request->uri,
-             http_request->version);
-      struct HTTP_HEADER *header = http_request->headers;
-      while (header) {
-        printf("%s: %s\n", header->name, header->value);
-        header = header->next;
-      }
-      if (http_request->body) {
-        printf("%s\n", http_request->body);
-      }
+    HTTP_REQUEST* http_request = parse_http_request(buffer);
+    if (http_request != NULL) {
+		printf("%s\n", http_request->uri);
+   //    enque(request_queue, http_request);
+	  // monitor_queue(request_queue);
     } else {
       printf("%s\n", "parsing error");
     }
 
-    enque(request_queue, counter);
-
     //  AFTER
     free(buffer);
     buffer = NULL;
-    free_http_request(http_request);
-    //  AFTER
-    //
+	
     char response[2048];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
@@ -101,6 +89,8 @@ int main() {
       printf("Message was not sent\n");
     }
 
+	free_http_request(http_request);
+	http_request = NULL;
     close(client_socket_fd);
   }
 

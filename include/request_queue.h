@@ -4,6 +4,6 @@ struct Queue{
 	struct Node *tail;
 };
 struct Queue* createQueue();
-void enque(struct Queue *queue, int value);
-int deque(struct Queue *queue);
+void enque(struct Queue *queue, struct HTTP_REQUEST* request);
+struct HTTP_REQUEST* deque(struct Queue *queue);
 void monitor_queue(struct Queue *queue);

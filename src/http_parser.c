@@ -11,7 +11,8 @@
 void free_http_request(struct HTTP_REQUEST *http_request);
 
 HTTP_REQUEST *parse_http_request(char *buffer) {
-  HTTP_REQUEST *http_request = (struct HTTP_REQUEST*)malloc(sizeof(HTTP_REQUEST));
+  HTTP_REQUEST *http_request =
+      (struct HTTP_REQUEST *)malloc(sizeof(HTTP_REQUEST));
   if (!http_request) {
     perror("malloc http request");
     return NULL;
@@ -71,7 +72,7 @@ HTTP_REQUEST *parse_http_request(char *buffer) {
   while (buffer[0] != '\r' || buffer[1] != '\n') {
     last_http_header = current_http_header;
     current_http_header = (HTTP_HEADER *)malloc(sizeof(HTTP_HEADER));
-	if (!current_http_header) {
+    if (!current_http_header) {
       perror("malloc http header");
       free_http_request(http_request);
       return NULL;
@@ -128,39 +129,39 @@ HTTP_REQUEST *parse_http_request(char *buffer) {
     }
 
     memcpy(http_request->body, buffer, body_len);
-	http_request->body[body_len] = '\0';
+    http_request->body[body_len] = '\0';
   }
 
   return http_request;
 }
 
 void free_header(struct HTTP_HEADER *header) {
-    if (header) {
-        free(header->name);
-        header->name = NULL;
+  if (header) {
+    free(header->name);
+    header->name = NULL;
 
-        free(header->value);
-        header->value = NULL;
+    free(header->value);
+    header->value = NULL;
 
-        struct HTTP_HEADER *next_header = header->next;
-        header->next = NULL;
+    struct HTTP_HEADER *next_header = header->next;
+    header->next = NULL;
 
-        free(header);
-        header = NULL;
+    free(header);
+    header = NULL;
 
-        free_header(next_header);
-    }
+    free_header(next_header);
+  }
 }
 void free_http_request(struct HTTP_REQUEST *http_request) {
   if (http_request) {
     free(http_request->uri);
-	http_request->uri = NULL;
+    http_request->uri = NULL;
     free(http_request->version);
-	http_request->version = NULL;
+    http_request->version = NULL;
     free(http_request->body);
-	http_request->body = NULL;
+    http_request->body = NULL;
     free_header(http_request->headers);
-	free(http_request);
-	http_request = NULL;
+    free(http_request);
+    http_request = NULL;
   }
 }
