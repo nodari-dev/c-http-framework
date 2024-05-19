@@ -1,71 +1,94 @@
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include "../include/http_types.h"
+#include "../include/request_queue.h"
 
-struct Node{
-	struct Node *next;
-	struct HTTP_REQUEST* http_request;
-};
+typedef struct QNode {
+  struct QNode *next;
+  int client_socket_fd;
+} QNode;
 
-struct Queue{
-	int len;
-	struct Node *head;
-	struct Node *tail;
-};
-
-struct Node* createNode(struct HTTP_REQUEST* request){
-	struct Node* newNode = (struct Node*)malloc(sizeof(struct Node));
-	if(newNode == NULL){
-		perror("queue new node");
-		exit(1);
-	}
-	newNode->http_request = request;
-	newNode->next = NULL;
-	return newNode;
+Request_Queue *createQueue() {
+  Request_Queue *queue = (Request_Queue *)malloc(sizeof(Request_Queue));
+  if (queue == NULL) {
+    perror("request_queue malloc");
+    exit(1);
+  }
+  queue->head = NULL;
+  queue->tail = NULL;
+  queue->len = 0;
+  pthread_mutex_init(&queue->mutex, NULL);
+  pthread_cond_init(&queue->not_empty, NULL);
+  return queue;
 }
 
-struct Queue* createQueue(){
-	struct Queue* queue = (struct Queue*)malloc(sizeof(struct Queue));
-	queue->head = NULL;
-	queue->tail = NULL;
-	queue->len = 0;
-	return queue;
+QNode *createNode(int client_socket_fd) {
+  QNode *newNode = (QNode *)malloc(sizeof(QNode));
+  if (newNode == NULL) {
+    perror("queue new node");
+    exit(1);
+  }
+  newNode->client_socket_fd = client_socket_fd;
+  newNode->next = NULL;
+  return newNode;
 }
 
-void enque(struct Queue *queue, struct HTTP_REQUEST* request){
-	struct Node* newNode = createNode(request);
-	if(queue->len == 0){
-		queue->head = queue->tail = newNode;
-		return;
-	}
-	queue->len++;
-	queue->tail->next = newNode;
-	queue->tail = newNode;
+void enque(Request_Queue *queue, int client_socket_fd) {
+  pthread_mutex_lock(&queue->mutex);
+  printf("i was called\n");
+  QNode *newNode = createNode(client_socket_fd);
+
+  if (queue->len == 0) {
+    queue->head = queue->tail = newNode;
+    queue->len++;
+    pthread_cond_signal(&queue->not_empty);
+    pthread_mutex_unlock(&queue->mutex);
+    printf("i was called as the first - end\n");
+	return;
+  }
+
+  queue->len++;
+  queue->tail->next = newNode;
+  queue->tail = newNode;
+
+  pthread_cond_signal(&queue->not_empty);
+  pthread_mutex_unlock(&queue->mutex);
+  printf("i was called - end\n");
 }
 
-struct HTTP_REQUEST* deque(struct Queue *queue){
-	struct HTTP_REQUEST* node = NULL;
-	if(queue->len > 0){
-		struct Node* temp = queue->head;
-		node = temp->http_request; 
-		queue->head = queue->head->next;
-		if(queue->head == NULL){
-			queue->tail = NULL;
-		}
-		free(temp);
-		queue->len--;
-	} 
+int deque(Request_Queue *queue) {
+  printf("len -> %d\n", queue->len);
+  while (queue->len == 0) {
+    // queue empty, nothing to return
+    pthread_cond_wait(&queue->not_empty, &queue->mutex);
+  }
 
-	return node;
+  pthread_mutex_lock(&queue->mutex);
+
+  QNode *temp = queue->head;
+  int client_socket_fd = temp->client_socket_fd;
+  queue->head = queue->head->next;
+  if (queue->head == NULL) {
+    queue->tail = NULL;
+  }
+  free(temp);
+  queue->len--;
+
+  pthread_cond_signal(&queue->not_empty);
+  pthread_mutex_unlock(&queue->mutex);
+
+  return client_socket_fd;
 }
 
-void monitor_queue(struct Queue* queue){
-	struct Node *current = queue->head;
-	int counter = 0;
+void monitor_queue(Request_Queue *queue) {
+  QNode *current = queue->head;
+  int counter = 0;
 
-	while (current != NULL) {
-		printf("Q[%d] %s\n", counter, current->http_request->uri);
-		current = current->next;
-		counter++;
-	}
+  while (current != NULL) {
+    printf("Q[%d] %d\n", counter, current->client_socket_fd);
+    current = current->next;
+    counter++;
+  }
 }

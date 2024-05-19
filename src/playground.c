@@ -1,27 +1,14 @@
-#include "../include/conf.h"
-#include "../include/errors.h"
-#include "../include/http_parser.h"
-#include "../include/request_queue.h"
-#include "../include/request_reader.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <unistd.h>  
+#include <pthread.h> 
 
-struct HTTP_REQUEST* test() {
-  struct HTTP_REQUEST *request;
-  request = (struct HTTP_REQUEST *)malloc(sizeof(struct HTTP_REQUEST));
-  return request;
-}
+#include "../include/request_queue.h"
+#include "../include/thread_pool.h"
 
 int main() {
-  for (int i = 0; i < 3; ++i) {
-    struct HTTP_REQUEST *http_request = test();
-
-    if (http_request != NULL) {
-      printf("Allocation %d, %p\n", i, http_request);
-    }
-
-  }
+	Request_Queue* request_queue = createQueue();
+	enque(request_queue, 1);
+	monitor_queue(request_queue);
+	Thread_Pool* thread_pool = init_thread_pool(request_queue);
 
   return 0;
 }

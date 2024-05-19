@@ -39,7 +39,7 @@ int main() {
   printf("Server is running on host: %s\n", DEFAULT_HOST);
   int counter = 1;
 
-  struct Queue *request_queue = createQueue();
+  Request_Queue* request_queue = createQueue();
 
   while (1) {
 
