@@ -9,26 +9,26 @@
 
 void *working_thread(void *arg) {
   Thread_Pool *thread_pool = (Thread_Pool *)arg;
+  pthread_detach(pthread_self());
   while (1) {
-    // pthread_mutex_lock(&thread_pool->request_queue->mutex);
 
-    while (thread_pool->request_queue->head == NULL && !thread_pool->shutdown) {
-      pthread_cond_wait(&thread_pool->request_queue->not_empty,
-                        &thread_pool->request_queue->mutex);
-    }
+    // while (thread_pool->request_queue->head == NULL && !thread_pool->shutdown) {
+    //   pthread_cond_wait(&thread_pool->request_queue->not_empty,
+    //                     &thread_pool->request_queue->mutex);
+    // }
+    //
+    // printf("lets get to work\n");
+    //
+    // if (thread_pool->shutdown) {
+    //   pthread_mutex_unlock(&thread_pool->request_queue->mutex);
+    //   pthread_exit(NULL);
+    // }
+    //
+    // int client_socket_id = deque(thread_pool->request_queue);
+    // printf("%d\n", client_socket_id);
 
-    printf("lets get to work\n");
-
-    if (thread_pool->shutdown) {
-      pthread_mutex_unlock(&thread_pool->request_queue->mutex);
-      pthread_exit(NULL);
-    }
-
-    int client_socket_id = deque(thread_pool->request_queue);
-    // pthread_mutex_unlock(&thread_pool->request_queue->mutex);
-    printf("%d\n", client_socket_id);
-
-    printf("i did something\n");
+    // printf("i did something\n");
+	sleep(1);
   }
 
   return NULL;

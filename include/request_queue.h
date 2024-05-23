@@ -8,6 +8,7 @@ typedef struct Request_Queue{
 	struct QNode *head;
 	struct QNode *tail;
 	pthread_mutex_t mutex;
+	pthread_mutex_t condition_mutex;
 	pthread_cond_t not_empty;
 } Request_Queue;
 

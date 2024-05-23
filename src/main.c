@@ -11,7 +11,7 @@
 #include "../include/http_parser.h"
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
-#include "../include/conf.h"
+#include "../include/thread_pool.h"
 
 int main() {
   struct sockaddr_in host_address;
@@ -36,10 +36,11 @@ int main() {
     return 1;
   }
 
+  Request_Queue *request_queue = createQueue();
+  Thread_Pool *thread_pool = init_thread_pool(request_queue);
+
   printf("Server is running on host: %s\n", DEFAULT_HOST);
   int counter = 1;
-
-  Request_Queue* request_queue = createQueue();
 
   while (1) {
 
@@ -60,11 +61,11 @@ int main() {
       close(client_socket_fd);
     }
 
-    HTTP_REQUEST* http_request = parse_http_request(buffer);
+    HTTP_REQUEST *http_request = parse_http_request(buffer);
     if (http_request != NULL) {
-		printf("%s\n", http_request->uri);
-   //    enque(request_queue, http_request);
-	  // monitor_queue(request_queue);
+      printf("%s\n", http_request->uri);
+      //    enque(request_queue, http_request);
+      // monitor_queue(request_queue);
     } else {
       printf("%s\n", "parsing error");
     }
@@ -72,7 +73,7 @@ int main() {
     //  AFTER
     free(buffer);
     buffer = NULL;
-	
+
     char response[2048];
     sprintf(response,
             "HTTP/1.1 200 OK\r\n"
@@ -89,8 +90,8 @@ int main() {
       printf("Message was not sent\n");
     }
 
-	free_http_request(http_request);
-	http_request = NULL;
+    free_http_request(http_request);
+    http_request = NULL;
     close(client_socket_fd);
   }
 

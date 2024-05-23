@@ -1,5 +1,5 @@
 build:
-	cc src/request_queue.c src/request_reader.c src/http_parser.c src/main.c -o bin/server
+	cc src/request_queue.c src/thread_pool.c src/request_reader.c src/http_parser.c src/main.c -o bin/server
 run:
 	./bin/server
 
