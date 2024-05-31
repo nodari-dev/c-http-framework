@@ -56,12 +56,12 @@ int main() {
       continue;
     }
 
-	char* buffer = read_request(client_socket_fd);
-	if (buffer) {
-		printf("%s", buffer);
-	}
+    char *buffer = read_request(client_socket_fd);
+    if (buffer) {
+      printf("%s", buffer);
+    }
 
-    HTTP_REQUEST* http_request = parse_http_request(buffer);
+    HTTP_REQUEST *http_request = parse_http_request(buffer);
     if (http_request) {
       printf("%d %s %s\n", http_request->method, http_request->uri,
              http_request->version);
@@ -73,19 +73,17 @@ int main() {
     enque(request_queue, counter);
 
     //  AFTER
-	free(buffer);
+    free(buffer);
     buffer = NULL;
     free_http_request(http_request);
     //  AFTER
-	
+
     char response[2048];
-    sprintf(response,
-            "HTTP/1.1 200 OK\r\n"
-            "Content-Type: text/html\r\n"
-            "Content-Length: 26\r\n"
-            "\r\n"
-            "<h1>%d</h1>",
-            counter);
+    sprintf(response, "HTTP/1.1 200 OK\r\n"
+                      "Content-Type: text/html\r\n"
+                      "Content-Length: 26\r\n"
+                      "\r\n"
+                      "<h1>you suck</h1>");
 
     counter++;
 
