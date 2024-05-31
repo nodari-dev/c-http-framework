@@ -1,11 +1,9 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <pthread.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
-#include <time.h>
 #include <unistd.h>
 
 #include "../include/conf.h"
@@ -14,99 +12,38 @@
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
 
-void *worker_thread(void *arg);
-void *request_thread(void *arg);
+#include "../include/conf.h"
 
 int main() {
-  Request_Queue *request_queue = createQueue();
-
-  pthread_t thread;
-  pthread_create(&thread, NULL, &request_thread, request_queue);
-
-  pthread_t worker_thread_arr[MAX_T];
-  for (int i = 0; i < MAX_T; ++i) {
-    pthread_create(&worker_thread_arr[i], NULL, worker_thread, request_queue);
-  }
-
-  pthread_join(thread, NULL);
-  for (int i = 0; i < MAX_T; ++i) {
-    pthread_join(worker_thread_arr[i], NULL);
-  }
-
-  return 0;
-}
-
-void *worker_thread(void *arg) {
-  Request_Queue *q = (Request_Queue *)arg;
-
-  for (;;) {
-    pthread_mutex_lock(&q->condition_mutex);
-    while (q->head == NULL) {
-      pthread_cond_wait(&q->not_empty, &q->condition_mutex);
-    }
-    pthread_mutex_unlock(&q->condition_mutex);
-
-    pthread_mutex_lock(&q->mutex);
-    int client_socket_fd = deque(q);
-
-    char *buffer = read_request(client_socket_fd);
-    if (buffer == NULL) {
-      close(client_socket_fd);
-    }
-
-    HTTP_REQUEST *http_request = parse_http_request(buffer);
-    if (http_request != NULL) {
-      printf("%sThread is working on s\n", http_request->uri);
-    } else {
-      printf("%s\n", "parsing error");
-    }
-
-    //  AFTER
-    free(buffer);
-    buffer = NULL;
-
-    char response[2048];
-    sprintf(response, "HTTP/1.1 200 OK\r\n"
-                      "Content-Type: text/html\r\n"
-                      "Content-Length: 26\r\n"
-                      "\r\n"
-                      "<h1>you suck</h1>");
-
-    int write_res = write(client_socket_fd, response, sizeof(response));
-    if (write_res == -1) {
-      printf("Message was not sent\n");
-    }
-
-    free_http_request(http_request);
-    http_request = NULL;
-    close(client_socket_fd);
-    pthread_mutex_unlock(&q->mutex);
-  }
-}
-
-void *request_thread(void *arg) {
   struct sockaddr_in host_address;
   host_address.sin_family = AF_INET;
   host_address.sin_port = htons(PORT);
   host_address.sin_addr.s_addr = inet_addr(DEFAULT_HOST);
 
   int server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (server_socket_fd == -1) {
+  if (server_socket_fd == FAILED) {
     perror("Couldn't create a socket\n");
+    return 1;
   }
 
   if (bind(server_socket_fd, (struct sockaddr *)&host_address,
-           sizeof(host_address)) == -1) {
+           sizeof(host_address)) == FAILED) {
     perror("Couldn't bind a socket\n");
+    return 1;
   }
 
-  if (listen(server_socket_fd, SOMAXCONN) == -1) {
+  if (listen(server_socket_fd, SOMAXCONN) == FAILED) {
     perror("this shit ain't gonna listen\n");
+    return 1;
   }
 
-  Request_Queue *q = (Request_Queue *)arg;
+  printf("Server is running on host: %s\n", DEFAULT_HOST);
+  int counter = 1;
 
-  for (;;) {
+  Request_Queue *request_queue = createQueue();
+
+  while (1) {
+
     struct sockaddr_in client_address;
     socklen_t client_address_len = sizeof(host_address);
 
@@ -114,23 +51,53 @@ void *request_thread(void *arg) {
         accept(server_socket_fd, (struct sockaddr *)&client_address,
                &client_address_len);
 
-    if (client_socket_fd == -1) {
+    if (client_socket_fd == FAILED) {
       perror("Failed connecting to client\n");
       continue;
     }
 
-    pthread_mutex_lock(&q->mutex);
-    enque(q, client_socket_fd);
-    printf("New request: %d\n", client_socket_fd);
-    pthread_mutex_unlock(&q->mutex);
+	char* buffer = read_request(client_socket_fd);
+	if (buffer) {
+		printf("%s", buffer);
+	}
 
-    pthread_mutex_lock(&q->condition_mutex);
-    if (q->head != NULL) {
-      pthread_cond_signal(&q->not_empty);
+    HTTP_REQUEST* http_request = parse_http_request(buffer);
+    if (http_request) {
+      printf("%d %s %s\n", http_request->method, http_request->uri,
+             http_request->version);
+      struct HTTP_HEADER *header = http_request->headers;
+    } else {
+      printf("%s\n", "parsing error");
     }
-    pthread_mutex_unlock(&q->condition_mutex);
+
+    enque(request_queue, counter);
+
+    //  AFTER
+	free(buffer);
+    buffer = NULL;
+    free_http_request(http_request);
+    //  AFTER
+	
+    char response[2048];
+    sprintf(response,
+            "HTTP/1.1 200 OK\r\n"
+            "Content-Type: text/html\r\n"
+            "Content-Length: 26\r\n"
+            "\r\n"
+            "<h1>%d</h1>",
+            counter);
+
+    counter++;
+
+    int write_res = write(client_socket_fd, response, sizeof(response));
+    if (write_res == FAILED) {
+      printf("Message was not sent\n");
+    }
+
+    close(client_socket_fd);
   }
 
   close(server_socket_fd);
-}
 
+  return 0;
+}

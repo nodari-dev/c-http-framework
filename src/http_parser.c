@@ -11,6 +11,10 @@
 void free_http_request(struct HTTP_REQUEST *http_request);
 
 HTTP_REQUEST *parse_http_request(char *buffer) {
+  if (!buffer) {
+    return NULL;
+  }
+
   HTTP_REQUEST *http_request =
       (struct HTTP_REQUEST *)malloc(sizeof(HTTP_REQUEST));
   if (!http_request) {
@@ -135,7 +139,7 @@ HTTP_REQUEST *parse_http_request(char *buffer) {
   return http_request;
 }
 
-void free_header(struct HTTP_HEADER *header) {
+void free_header(HTTP_HEADER *header) {
   if (header) {
     free(header->name);
     header->name = NULL;
@@ -152,7 +156,7 @@ void free_header(struct HTTP_HEADER *header) {
     free_header(next_header);
   }
 }
-void free_http_request(struct HTTP_REQUEST *http_request) {
+void free_http_request(HTTP_REQUEST *http_request) {
   if (http_request) {
     free(http_request->uri);
     http_request->uri = NULL;
@@ -160,7 +164,7 @@ void free_http_request(struct HTTP_REQUEST *http_request) {
     http_request->version = NULL;
     free(http_request->body);
     http_request->body = NULL;
-    free_header(http_request->headers);
+    // free_header(http_request->headers);
     free(http_request);
     http_request = NULL;
   }
