@@ -37,7 +37,6 @@ QNode *createNode(int client_socket_fd) {
 }
 
 void enque(Request_Queue *queue, int client_socket_fd) {
-  // pthread_mutex_lock(&queue->mutex);
   QNode *newNode = createNode(client_socket_fd);
 
   if (queue->len == 0) {
@@ -52,6 +51,9 @@ void enque(Request_Queue *queue, int client_socket_fd) {
 }
 
 int deque(Request_Queue *queue) {
+  if (queue->head == NULL) {
+	  return -1;
+  }
 
   QNode *temp = queue->head;
   int client_socket_fd = temp->client_socket_fd;
@@ -61,9 +63,6 @@ int deque(Request_Queue *queue) {
   }
   free(temp);
   queue->len--;
-
-  // pthread_cond_broadcast(&queue->not_empty);
-  // pthread_mutex_unlock(&queue->mutex);
 
   return client_socket_fd;
 }
