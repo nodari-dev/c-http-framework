@@ -3,12 +3,11 @@
 #include <pthread.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 int main(){
-	char* test = NULL;
-	free(test);
+  printf("%lu\n", strlen(": "));
 	return 0;
 }

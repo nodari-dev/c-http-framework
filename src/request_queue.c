@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "../include/http_types.h"
 #include "../include/request_queue.h"
 
 typedef struct QNode {
@@ -19,9 +18,6 @@ Request_Queue *createQueue() {
   queue->head = NULL;
   queue->tail = NULL;
   queue->len = 0;
-  pthread_mutex_init(&queue->mutex, NULL);
-  pthread_mutex_init(&queue->condition_mutex, NULL);
-  pthread_cond_init(&queue->not_empty, NULL);
   return queue;
 }
 

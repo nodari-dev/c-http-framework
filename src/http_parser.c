@@ -12,6 +12,7 @@ void free_http_request(struct HTTP_REQUEST *http_request);
 
 HTTP_REQUEST *parse_http_request(char *buffer) {
   if (!buffer) {
+	  printf("Buffer not found\n");
     return NULL;
   }
 

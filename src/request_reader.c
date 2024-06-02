@@ -12,8 +12,6 @@
 
 #include "../include/conf.h"
 
-void free_buffer(char **buffer);
-
 char *read_request(int client_socket_fd) {
   int predefined_buffer_size = BUFFER_FOR_READ;
   char *buffer = malloc(predefined_buffer_size);
@@ -22,7 +20,7 @@ char *read_request(int client_socket_fd) {
 
   if (!buffer) {
     perror("buffer malloc");
-	exit(1);
+    exit(1);
   }
 
   // NOTE: buffer + total_buffer_size - go to free space slot
@@ -31,13 +29,8 @@ char *read_request(int client_socket_fd) {
     bytes_read = recv(client_socket_fd, buffer + total_buffer_size,
                       predefined_buffer_size - total_buffer_size, 0);
 
-    if (bytes_read < 0) {
-      perror("recv bytes error");
-      return NULL;
-    }
-
-    if (bytes_read == 0) {
-      return NULL;
+    if (bytes_read <= 0) {
+		break;
     }
 
     total_buffer_size += bytes_read;
@@ -47,8 +40,9 @@ char *read_request(int client_socket_fd) {
 
       if (new_buffer == NULL) {
         perror("new_buffer error realloc");
-        free_buffer(&buffer);
-		exit(1);
+        free(buffer);
+        buffer = NULL;
+        exit(1);
       }
 
       buffer = new_buffer;
@@ -63,16 +57,12 @@ char *read_request(int client_socket_fd) {
   char *temp = realloc(buffer, total_buffer_size + 1);
   if (temp == NULL) {
     perror("realloc");
-	free_buffer(&buffer);
-	exit(1);
+    free(buffer);
+    buffer = NULL;
+    exit(1);
   }
 
   buffer = temp;
   buffer[total_buffer_size] = '\0';
   return buffer;
-}
-
-void free_buffer(char **buffer) {
-  free(buffer);
-  buffer = NULL;
 }

@@ -1,3 +1,7 @@
+
+#ifndef _HTTPTYPESH 
+#define _HTTPTYPESH 
+
 enum HTTP_METHOD{
 	POST, GET, PUT, DELETE, UNSUPPORTED
 };
@@ -17,3 +21,4 @@ typedef struct HTTP_REQUEST{
 
 } HTTP_REQUEST;
 
+#endif
