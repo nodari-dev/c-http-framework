@@ -21,4 +21,7 @@ typedef struct HTTP_REQUEST{
 
 } HTTP_REQUEST;
 
+char* parse_http_method(enum HTTP_METHOD);
+
 #endif
+

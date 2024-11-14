@@ -9,11 +9,11 @@
 #include "../include/conf.h"
 #include "../include/errors.h"
 #include "../include/http_parser.h"
+#include "../include/logger.h"
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
 #include "../include/thread_pool.h"
-#include "../include/logger.h"
-#include "../include/conf.h"
+#include "../include/utils/string_builder.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -42,18 +42,27 @@ int main() {
 
   Request_Queue *request_queue = createQueue();
   Worker_Args *worker_args = (Worker_Args *)malloc(sizeof(Worker_Args));
-  if(worker_args == NULL){
-	  perror("Worker_Args malloc");
-	  exit(1);
+  if (worker_args == NULL) {
+    perror("Worker_Args malloc");
+    exit(1);
   }
+
   worker_args->cond = &cond;
   worker_args->mutex = &mutex;
   worker_args->q = request_queue;
   T_Pool *t_pool = init_thread_pool(worker_args);
 
-  printf("Server is running on host: %s\n", DEFAULT_HOST);
-
-  log_info(INFO, "hello bitches");
+  String_Builder *sb = init_string_builder();
+  if (sb == NULL) {
+    perror("String_Builder was not initialized");
+    exit(1);
+  }
+  append_chars(sb, "Server started, listening on port: ");
+  char port_str[5];
+  sprintf(port_str, "%d", PORT);
+  append_chars(sb, port_str);
+  log_data(INFO, sb->buf);
+  free_string_builder(sb);
 
   while (1) {
     struct sockaddr_in client_address;
@@ -64,7 +73,7 @@ int main() {
                &client_address_len);
 
     if (client_socket_fd == FAILED) {
-      perror("Failed connecting to client\n");
+      log_data(WARNING, "Failed connecting to client");
       continue;
     }
 
@@ -74,6 +83,7 @@ int main() {
     pthread_mutex_unlock(&mutex);
   }
 
+  free_string_builder(sb);
   close(server_socket_fd);
 
   return 0;

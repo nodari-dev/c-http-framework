@@ -28,13 +28,13 @@ HTTP_REQUEST *parse_http_request(char *buffer) {
   if (memcmp(buffer, "POST", strlen("POST")) == 0) {
     http_request->method = POST;
   }
-  if (memcmp(buffer, "GET", strlen("GET")) == 0) {
+  else if (memcmp(buffer, "GET", strlen("GET")) == 0) {
     http_request->method = GET;
   }
-  if (memcmp(buffer, "PUT", strlen("PUT")) == 0) {
+  else if (memcmp(buffer, "PUT", strlen("PUT")) == 0) {
     http_request->method = PUT;
   }
-  if (memcmp(buffer, "DELETE", strlen("DELETE")) == 0) {
+  else if (memcmp(buffer, "DELETE", strlen("DELETE")) == 0) {
     http_request->method = DELETE;
   } else {
     http_request->method = UNSUPPORTED;

@@ -5,9 +5,12 @@
 
 #include "../include/conf.h"
 #include "../include/http_parser.h"
+#include "../include/http_types.h"
+#include "../include/logger.h"
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
 #include "../include/thread_pool.h"
+#include "../include/utils/string_builder.h"
 
 void *worker_thread(void *args);
 
@@ -36,6 +39,7 @@ void *worker_thread(void *args) {
   Request_Queue *request_queue = worker_args->q;
   pthread_mutex_t *mutex = worker_args->mutex;
   pthread_cond_t *cond = worker_args->cond;
+  String_Builder *sb = init_string_builder();
 
   while (1) {
     int client_socket_fd;
@@ -49,11 +53,17 @@ void *worker_thread(void *args) {
       char *buffer = read_request(client_socket_fd);
 
       HTTP_REQUEST *http_request = parse_http_request(buffer);
+	  printf("%u", http_request->method);
       if (http_request) {
-        printf("%d %s %s\n", http_request->method, http_request->uri,
-               http_request->version);
+        append_chars(sb, parse_http_method(http_request->method));
+        append_chars(sb, "");
+        append_chars(sb, http_request->uri);
+        append_chars(sb, "");
+        append_chars(sb, http_request->version);
+        log_data(INFO, sb->buf);
+        free_string_builder(sb);
       } else {
-        printf("Couldn't parse request\n");
+        log_data(ERROR, "Couldn't parse request");
       }
 
       free(buffer);
@@ -69,9 +79,8 @@ void *worker_thread(void *args) {
 
       int write_res = write(client_socket_fd, response, sizeof(response));
       if (write_res == -1) {
-        printf("Message was not sent\n");
+        log_data(ERROR, "Message was not sent\n");
       }
-
       close(client_socket_fd);
     }
   }
