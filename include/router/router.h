@@ -1,25 +1,25 @@
 #include <stdbool.h>
 #include "../http_types.h"
 
-typedef struct Endpoint {
+typedef struct Node {
   struct Hashmap *children;
   char *(*call_methods[4])();
   char *key;
-} Endpoint;
+  bool dynamic;
+} Node;
 
 typedef struct Hashmap {
-  Endpoint **arr;
+  Node **arr;
   unsigned int fullfiled_slots;
   unsigned int size;
 } Hashmap;
 
 Hashmap *init_hashmap();
-void insert_into_hashmap(struct Hashmap *, enum HTTP_METHOD, char *, char *(*handle_response)());
-struct Endpoint *get_from_hashmap(struct Hashmap *, char *);
+void insert(struct Hashmap *, enum HTTP_METHOD, char *, char *(*handle_response)());
+struct Node *get_from_hashmap(struct Hashmap *, char *);
 
 typedef struct Router {
-  Hashmap *static_endpoints;
-  Hashmap *dynamic_endpoints;
+  Node *root_node;
 } Router;
 
 Router *init_router();

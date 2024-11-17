@@ -7,40 +7,15 @@
 #define MIN_FULLFILMENT_PERSENTAGE 20
 #define MAX_FULLFILMENT_PERSENTAGE 80
 
-void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path, char *(*handle_response)()) {
-
-  // /profile/:id
-  // /profile/all
-
-  // if : is there -> dynamic
-  insert_into_hashmap(r->static_endpoints, method, path, handle_response);
-  // r->dynamic_endpoints->insert(r->dynamic_endpoints, "path");
-}
-
-char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
-  Hashmap *hash = r->static_endpoints;
-  
-  Endpoint *endpoint = get_from_hashmap(hash, path);
-  if(endpoint == NULL){
-	  return "nothing found";
-  }
-  if(endpoint->call_methods[method] == NULL){
-	  return "nothing found for method";
-  }
-  return endpoint->call_methods[method]();
-}
-
-Router *init_router() {
-  Router *r = malloc(sizeof(Router));
-  if (r == NULL) {
-    perror("Router malloc");
+Node *create_node(char *key) {
+  Node *h_item = malloc(sizeof(Node));
+  if (h_item == NULL) {
     exit(1);
   }
+  h_item->key = key;
+  h_item->children = init_hashmap();
 
-  r->static_endpoints = init_hashmap();
-  r->dynamic_endpoints = init_hashmap();
-
-  return r;
+  return h_item;
 }
 
 unsigned int sdbm_hash_me_dady(char *str, unsigned int length,
@@ -55,31 +30,8 @@ unsigned int sdbm_hash_me_dady(char *str, unsigned int length,
   return hash % hmap_size;
 };
 
-void free_router(Router *r){
-	for(int i = 0; i < r->static_endpoints->size; ++i){
-		if(r->static_endpoints->arr[i] != NULL){
-			free(r->static_endpoints->arr[i]);
-		}
-	}
-	free(r->static_endpoints);
-
-	// TODO: ADD FREE FOR DYNAMIC ENDPOINTS
-	
-	free(r->dynamic_endpoints);
-}
-
-Endpoint *create_endpoint(char *key) {
-  Endpoint *h_item = malloc(sizeof(Endpoint));
-  if (h_item == NULL) {
-    exit(1);
-  }
-  h_item->key = key;
-
-  return h_item;
-}
-
 void resize(Hashmap *hmap, unsigned int new_size) {
-  Endpoint **new_arr = malloc(sizeof(Endpoint) * new_size);
+  Node **new_arr = malloc(sizeof(Node) * new_size);
   if (new_arr == NULL) {
     exit(1);
   }
@@ -107,32 +59,114 @@ void resize_or_skip(Hashmap *hmap) {
   }
 }
 
-void insert_into_hashmap(Hashmap *hmap, enum HTTP_METHOD method, char *key, char *(*handle_response)()) {
-  Endpoint *new_h_item = create_endpoint(key);
+void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
+                  char *(*handle_response)()) {
+
+  // if (strchr(path, ':') == NULL) {
+  //   insert_static_endpoint_into_hashmap(r->static_endpoints, method, path,
+  //                                       handle_response);
+  // } else {
+  //   insert_dynamic_endpoint_into_hashmap(r->dynamic_endpoints, method, path,
+  //                                        handle_response);
+  // }
+  //
+
+  //  } else if (hmap->arr[hash]->key == key &&
+  // 		 hmap->arr[hash]->call_methods[method] == NULL) {
+  // // same endpoint, different method
+  // hmap->arr[hash]->call_methods[method] = handle_response;
+  //  } else if (hmap->arr[hash]->key == key &&
+  // 		 hmap->arr[hash]->call_methods[method] != NULL) {
+  // printf("Overriding endpoint, check your code, you dummy\n");
+  // exit(1);
+  //  } else {
+  // // in case if two endpoints collide, I need to resize the hashmap
+  // resize(hmap, hmap->size * 2);
+  //  }
+  char *buffer = strdup(path);
+  char *token;
+  token = strtok(buffer, "/");
+  Node *current_node = r->root_node;
+
+  while (token != NULL) {
+    Node *new_node = create_node(token);
+    unsigned int hash =
+        sdbm_hash_me_dady(token, strnlen(token, sizeof token), current_node->children->size);
+
+    if (current_node->children->arr[hash] == NULL) {
+      current_node->children->arr[hash] = new_node;
+      current_node->children->fullfiled_slots++;
+	  resize_or_skip(current_node->children);
+    }
+    current_node = current_node->children->arr[hash];
+    token = strtok(NULL, "/");
+  }
+
+  if (current_node->call_methods[method] != NULL) {
+    printf(
+        "You are overriding existing endpoint, check your code, you dummy\n");
+    exit(1);
+  }
+  current_node->call_methods[method] = handle_response;
+}
+
+char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
+  //
+  // Node *endpoint = get_from_hashmap(hm, path);
+  // if (endpoint == NULL) {
+  //   return "nothing found";
+  // }
+  // if (endpoint->call_methods[method] == NULL) {
+  //   return "nothing found for method";
+  // }
+  // return endpoint->call_methods[method]();
+  return "";
+}
+
+Router *init_router() {
+  Router *r = malloc(sizeof(Router));
+  if (r == NULL) {
+    perror("Router malloc");
+    exit(1);
+  }
+
+  r->root_node = create_node("");
+
+  return r;
+}
+
+void free_router(Router *r) {
+}
+
+void insert(Hashmap *hmap, enum HTTP_METHOD method, char *key,
+            char *(*handle_response)()) {
+  Node *new_h_item = create_node(key);
   new_h_item->call_methods[method] = handle_response;
 
   unsigned int hash =
       sdbm_hash_me_dady(key, strnlen(key, sizeof key), hmap->size);
 
-  if (hmap->arr[hash] == NULL) {
-    hmap->arr[hash] = new_h_item;
-    hmap->fullfiled_slots++;
-	return;
-  } else if (hmap->arr[hash]->key == key && hmap->arr[hash]->call_methods[method] == NULL) {
-	  // same endpoint, different method
-	  hmap->arr[hash]->call_methods[method] = handle_response;
-  } else if(hmap->arr[hash]->key == key && hmap->arr[hash]->call_methods[method] != NULL){
-	  printf("Overriding endpoint, check your code, you dummy\n");
-	  exit(1);
-  } else {
-    // in case if two endpoints collide, I need to resize the hashmap
-    resize(hmap, hmap->size * 2);
-  }
+  // if (hmap->arr[hash] == NULL) {
+  //   hmap->arr[hash] = new_h_item;
+  //   hmap->fullfiled_slots++;
+  //   return;
+  // } else if (hmap->arr[hash]->key == key &&
+  //            hmap->arr[hash]->call_methods[method] == NULL) {
+  //   // same endpoint, different method
+  //   hmap->arr[hash]->call_methods[method] = handle_response;
+  // } else if (hmap->arr[hash]->key == key &&
+  //            hmap->arr[hash]->call_methods[method] != NULL) {
+  //   printf("Overriding endpoint, check your code, you dummy\n");
+  //   exit(1);
+  // } else {
+  //   // in case if two endpoints collide, I need to resize the hashmap
+  //   resize(hmap, hmap->size * 2);
+  // }
 
   resize_or_skip(hmap);
 }
 
-Endpoint *get_from_hashmap(Hashmap *hmap, char *key) {
+Node *get_from_hashmap(Hashmap *hmap, char *key) {
   unsigned int hash =
       sdbm_hash_me_dady(key, strnlen(key, sizeof key), hmap->size);
   return hmap->arr[hash];
@@ -145,9 +179,9 @@ Hashmap *init_hashmap() {
   }
 
   hashmap->fullfiled_slots = 0;
-  hashmap->size = 32;
+  hashmap->size = 16;
 
-  hashmap->arr = malloc(sizeof(Endpoint) * hashmap->size);
+  hashmap->arr = malloc(sizeof(Node) * hashmap->size);
   if (hashmap->arr == NULL) {
     free(hashmap);
     exit(1);
@@ -159,4 +193,3 @@ Hashmap *init_hashmap() {
 
   return hashmap;
 }
-
