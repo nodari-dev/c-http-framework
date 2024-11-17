@@ -98,6 +98,8 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
       current_node->children->fullfiled_slots++;
 	  resize_or_skip(current_node->children);
     }
+
+	HANDLE DYNAMIC TOKENS
     current_node = current_node->children->arr[hash];
     token = strtok(NULL, "/");
   }
@@ -111,16 +113,21 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
 }
 
 char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
-  //
-  // Node *endpoint = get_from_hashmap(hm, path);
-  // if (endpoint == NULL) {
-  //   return "nothing found";
-  // }
-  // if (endpoint->call_methods[method] == NULL) {
-  //   return "nothing found for method";
-  // }
-  // return endpoint->call_methods[method]();
-  return "";
+  char *buffer = strdup(path);
+  char *token;
+  token = strtok(buffer, "/");
+  Node *current_node = r->root_node;
+
+	HANDLE DYNAMIC TOKENS
+  while (token != NULL) {
+    unsigned int hash =
+        sdbm_hash_me_dady(token, strnlen(token, sizeof token), current_node->children->size);
+
+	current_node = current_node->children->arr[hash];
+    token = strtok(NULL, "/");
+  }
+
+  return current_node->call_methods[method]();
 }
 
 Router *init_router() {

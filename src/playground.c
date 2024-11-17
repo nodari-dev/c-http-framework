@@ -1,4 +1,5 @@
 #include "../include/router/router.h"
+#include <stdio.h>
 
 char *get_deez_nuts(){
 	return "GET DEEZ NUTS";
@@ -7,7 +8,7 @@ char *get_deez_nuts(){
 int main(){
 	Router* r = init_router();
 	add_endpoint(r, GET, "/deez/nuts/:id", get_deez_nuts);
-	// printf("%s\n", call_endpoint(r, GET, "/deez/nuts/:id"));
+	printf("%s\n", call_endpoint(r, GET, "/deez/nuts/:id"));
 	// free_router(r);
 	return 0;
 }
