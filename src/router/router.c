@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +13,12 @@ Node *create_node(char *key) {
   if (h_item == NULL) {
     exit(1);
   }
+
   h_item->key = key;
+  if (strchr(key, ':') != NULL) {
+    h_item->dynamic = true;
+  }
+
   h_item->children = init_hashmap();
 
   return h_item;
@@ -62,27 +68,6 @@ void resize_or_skip(Hashmap *hmap) {
 void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
                   char *(*handle_response)()) {
 
-  // if (strchr(path, ':') == NULL) {
-  //   insert_static_endpoint_into_hashmap(r->static_endpoints, method, path,
-  //                                       handle_response);
-  // } else {
-  //   insert_dynamic_endpoint_into_hashmap(r->dynamic_endpoints, method, path,
-  //                                        handle_response);
-  // }
-  //
-
-  //  } else if (hmap->arr[hash]->key == key &&
-  // 		 hmap->arr[hash]->call_methods[method] == NULL) {
-  // // same endpoint, different method
-  // hmap->arr[hash]->call_methods[method] = handle_response;
-  //  } else if (hmap->arr[hash]->key == key &&
-  // 		 hmap->arr[hash]->call_methods[method] != NULL) {
-  // printf("Overriding endpoint, check your code, you dummy\n");
-  // exit(1);
-  //  } else {
-  // // in case if two endpoints collide, I need to resize the hashmap
-  // resize(hmap, hmap->size * 2);
-  //  }
   char *buffer = strdup(path);
   char *token;
   token = strtok(buffer, "/");
@@ -90,16 +75,15 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
 
   while (token != NULL) {
     Node *new_node = create_node(token);
-    unsigned int hash =
-        sdbm_hash_me_dady(token, strnlen(token, sizeof token), current_node->children->size);
+    unsigned int hash = sdbm_hash_me_dady(token, strnlen(token, sizeof token),
+                                          current_node->children->size);
 
     if (current_node->children->arr[hash] == NULL) {
       current_node->children->arr[hash] = new_node;
       current_node->children->fullfiled_slots++;
-	  resize_or_skip(current_node->children);
+      resize_or_skip(current_node->children);
     }
 
-	HANDLE DYNAMIC TOKENS
     current_node = current_node->children->arr[hash];
     token = strtok(NULL, "/");
   }
@@ -118,12 +102,11 @@ char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
   token = strtok(buffer, "/");
   Node *current_node = r->root_node;
 
-	HANDLE DYNAMIC TOKENS
   while (token != NULL) {
-    unsigned int hash =
-        sdbm_hash_me_dady(token, strnlen(token, sizeof token), current_node->children->size);
+    unsigned int hash = sdbm_hash_me_dady(token, strnlen(token, sizeof token),
+                                          current_node->children->size);
 
-	current_node = current_node->children->arr[hash];
+    current_node = current_node->children->arr[hash];
     token = strtok(NULL, "/");
   }
 
@@ -142,42 +125,7 @@ Router *init_router() {
   return r;
 }
 
-void free_router(Router *r) {
-}
-
-void insert(Hashmap *hmap, enum HTTP_METHOD method, char *key,
-            char *(*handle_response)()) {
-  Node *new_h_item = create_node(key);
-  new_h_item->call_methods[method] = handle_response;
-
-  unsigned int hash =
-      sdbm_hash_me_dady(key, strnlen(key, sizeof key), hmap->size);
-
-  // if (hmap->arr[hash] == NULL) {
-  //   hmap->arr[hash] = new_h_item;
-  //   hmap->fullfiled_slots++;
-  //   return;
-  // } else if (hmap->arr[hash]->key == key &&
-  //            hmap->arr[hash]->call_methods[method] == NULL) {
-  //   // same endpoint, different method
-  //   hmap->arr[hash]->call_methods[method] = handle_response;
-  // } else if (hmap->arr[hash]->key == key &&
-  //            hmap->arr[hash]->call_methods[method] != NULL) {
-  //   printf("Overriding endpoint, check your code, you dummy\n");
-  //   exit(1);
-  // } else {
-  //   // in case if two endpoints collide, I need to resize the hashmap
-  //   resize(hmap, hmap->size * 2);
-  // }
-
-  resize_or_skip(hmap);
-}
-
-Node *get_from_hashmap(Hashmap *hmap, char *key) {
-  unsigned int hash =
-      sdbm_hash_me_dady(key, strnlen(key, sizeof key), hmap->size);
-  return hmap->arr[hash];
-}
+void free_router(Router *r) {}
 
 Hashmap *init_hashmap() {
   Hashmap *hashmap = malloc(sizeof(Hashmap));
