@@ -101,16 +101,26 @@ char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
   char *token;
   token = strtok(buffer, "/");
   Node *current_node = r->root_node;
+  List* list = init_list();
 
   while (token != NULL) {
     unsigned int hash = sdbm_hash_me_dady(token, strnlen(token, sizeof token),
                                           current_node->children->size);
 
     current_node = current_node->children->arr[hash];
+	if(current_node->dynamic == true){
+		push(list, token);
+	}
+
+	// IF THERE IS NO HASH -> CHECK DYNAMIC
     token = strtok(NULL, "/");
   }
+  
+  if(list->last_index == -1){
+	  free_list(list);
+  }
 
-  return current_node->call_methods[method]();
+  return current_node->call_methods[method](list);
 }
 
 Router *init_router() {

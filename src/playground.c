@@ -1,7 +1,14 @@
-#include "../include/router/router.h"
 #include <stdio.h>
+#include "../include/router/router.h"
 
-char *get_deez_nuts(){
+char *get_deez_nuts(List* params){
+	if(params != NULL){
+		for(int i = 0; i < params->size; ++i){
+			if(params->arr[i] != NULL){
+				printf("%d: %s\n", i, params->arr[i]);
+			}
+		}
+	}
 	return "GET DEEZ NUTS";
 }
 

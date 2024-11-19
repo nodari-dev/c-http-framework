@@ -3,7 +3,7 @@ run:
 	./bin/server
 
 fun:
-	cc src/utils/string_builder.c src/router/router.c  src/playground.c -o bin/playground
+	cc src/utils/string_builder.c src/utils/array_list.c src/router/router.c src/playground.c -o bin/playground
 	./bin/playground
 
 ab:

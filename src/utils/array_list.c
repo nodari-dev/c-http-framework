@@ -1,7 +1,8 @@
-#include "../../include/utils/array_list.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "../../include/utils/array_list.h"
 
 List *init_list() {
   List *list = malloc(sizeof(List));
@@ -23,7 +24,7 @@ List *init_list() {
   return list;
 }
 
-void resize(List *list) {
+void resize_list(List *list) {
   char **new_arr = malloc(sizeof(char *) * list->size * 2);
   for (int i = 0; i < list->size; i++) {
     new_arr[i] = strdup(list->arr[i]);
@@ -41,13 +42,13 @@ void resize(List *list) {
 
 void push(List *list, char *item) {
   if (list->size == list->last_index + 1) {
-    resize(list);
+    resize_list(list);
   }
 
-  int index = list->last_index + 1;
-  list->arr[index] = strdup(item);
+  list->last_index++;
+  list->arr[list->last_index] = strdup(item);
 
-  if (list->arr[index] == NULL) {
+  if (list->arr[list->last_index] == NULL) {
     perror("push null\n");
     exit(1);
   }

@@ -1,9 +1,10 @@
 #include <stdbool.h>
 #include "../http_types.h"
+#include "../utils/array_list.h"
 
 typedef struct Node {
   struct Hashmap *children;
-  char *(*call_methods[4])();
+  char *(*call_methods[4])(List*);
   char *key;
   bool dynamic;
 } Node;
