@@ -14,7 +14,7 @@ List *init_list() {
   list->size = 8;
   list->last_index = -1;
 
-  list->arr = malloc(sizeof(char) * list->size);
+  list->arr = malloc(sizeof(char *) * list->size);
   if (list->arr == NULL) {
     free_list(list);
     perror("init_list array malloc\n");

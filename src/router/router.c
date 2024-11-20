@@ -112,7 +112,6 @@ char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
 		push(list, token);
 	}
 
-	// IF THERE IS NO HASH -> CHECK DYNAMIC
     token = strtok(NULL, "/");
   }
   
@@ -135,7 +134,9 @@ Router *init_router() {
   return r;
 }
 
-void free_router(Router *r) {}
+void free_router(Router *r) {
+	PUT CODE HERE
+}
 
 Hashmap *init_hashmap() {
   Hashmap *hashmap = malloc(sizeof(Hashmap));
