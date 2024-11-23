@@ -1,1 +1,0 @@
-#define FAILED -1

@@ -1,5 +1,5 @@
 #include <stdbool.h>
-#include "../http_types.h"
+#include "../http/http_types.h"
 #include "../utils/array_list.h"
 
 typedef struct Node {
@@ -27,4 +27,4 @@ Router *init_router();
 void free_router(Router *);
 
 void add_endpoint(struct Router *, enum HTTP_METHOD, char *, char *(*handle_response)());
-char *call_endpoint(struct Router*, enum HTTP_METHOD, char *);
+char *call_endpoint(struct Router*, HTTP_REQUEST*);

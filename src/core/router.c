@@ -135,7 +135,7 @@ Router *init_router() {
 }
 
 void free_router(Router *r) {
-	PUT CODE HERE
+	// PUT CODE HERE
 }
 
 Hashmap *init_hashmap() {

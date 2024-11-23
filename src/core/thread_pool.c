@@ -5,7 +5,6 @@
 
 #include "../include/conf.h"
 #include "../include/http_parser.h"
-#include "../include/http_types.h"
 #include "../include/logger.h"
 #include "../include/request_queue.h"
 #include "../include/request_reader.h"
@@ -55,7 +54,7 @@ void *worker_thread(void *args) {
       HTTP_REQUEST *http_request = parse_http_request(buffer);
 	  printf("%u", http_request->method);
       if (http_request) {
-        append_chars(sb, parse_http_method(http_request->method));
+        append_chars(sb, http_method_to_str(http_request->method));
         append_chars(sb, "");
         append_chars(sb, http_request->uri);
         append_chars(sb, "");

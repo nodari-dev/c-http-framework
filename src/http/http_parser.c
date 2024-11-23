@@ -140,6 +140,16 @@ HTTP_REQUEST *parse_http_request(char *buffer) {
   return http_request;
 }
 
+char* http_method_to_str(enum HTTP_METHOD method){
+	switch (method) {
+	  case GET: return "GET";
+	  case PUT: return "PUT";
+	  case POST: return "POST";
+	  case DELETE: return "DELETE";
+	  case UNSUPPORTED: return "UNSUPPORTED";
+	}
+}
+
 void free_header(HTTP_HEADER *header) {
   if (header) {
     free(header->name);

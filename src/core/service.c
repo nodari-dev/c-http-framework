@@ -6,19 +6,21 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../include/conf.h"
-#include "../include/errors.h"
-#include "../include/http_parser.h"
-#include "../include/logger.h"
-#include "../include/request_queue.h"
-#include "../include/request_reader.h"
-#include "../include/thread_pool.h"
-#include "../include/utils/string_builder.h"
+#include "../../include/conf.h"
+#include "../../include/core/service.h"
+#include "../../include/http/http_parser.h"
+#include "../../include/logger.h"
+#include "../../include/core/request_queue.h"
+#include "../../include/core/request_reader.h"
+#include "../../include/core/thread_pool.h"
+#include "../../include/utils/string_builder.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-int main() {
+WEB_Service* init_web
+
+int start_service() {
   struct sockaddr_in host_address;
   host_address.sin_family = AF_INET;
   host_address.sin_port = htons(PORT);

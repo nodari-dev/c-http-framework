@@ -1,6 +1,6 @@
 #include <pthread.h>
 
-#include "./conf.h"
+#include "../conf.h"
 #include "./request_queue.h"
 
 typedef struct T_Pool {
