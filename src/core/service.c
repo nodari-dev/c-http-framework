@@ -18,9 +18,17 @@
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-WEB_Service* init_web
+WEB_Service* init_service(){
+	WEB_Service* ws = (WEB_Service*)malloc(sizeof(WEB_Service));
+	if(ws == NULL){
+		perror("web service init");
+		exit(1);
+	}
 
-int start_service() {
+	return ws;
+}
+
+void start_service() {
   struct sockaddr_in host_address;
   host_address.sin_family = AF_INET;
   host_address.sin_port = htons(PORT);
@@ -29,17 +37,17 @@ int start_service() {
   int server_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
   if (server_socket_fd == FAILED) {
     perror("Couldn't create a socket\n");
-    return 1;
+    exit(1);
   }
   if (bind(server_socket_fd, (struct sockaddr *)&host_address,
            sizeof(host_address)) == FAILED) {
     perror("Couldn't bind a socket\n");
-    return 1;
+    exit(1);
   }
 
   if (listen(server_socket_fd, SOMAXCONN) == FAILED) {
     perror("this shit ain't gonna listen\n");
-    return 1;
+    exit(1);
   }
 
   Request_Queue *request_queue = createQueue();
@@ -87,6 +95,4 @@ int start_service() {
 
   free_string_builder(sb);
   close(server_socket_fd);
-
-  return 0;
 }
