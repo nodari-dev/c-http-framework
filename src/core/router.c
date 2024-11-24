@@ -73,7 +73,6 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
   while (token != NULL) {
     Node *new_node = create_node(token);
     unsigned int hash = sdbm_hash_me_dady(token, current_node->children->size);
-printf("%d\n", hash);
 
     if (current_node->children->arr[hash] == NULL) {
       current_node->children->arr[hash] = new_node;

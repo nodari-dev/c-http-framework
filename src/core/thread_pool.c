@@ -66,14 +66,9 @@ void *worker_thread(void *args) {
 		// TODO: ADD 500
       }
 
-      char response[2048] = "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/html\r\n"
-                        "Content-Length: 26\r\n"
-                        "\r\n"
-                        "<h1>POST you suck</h1>";
 
-	  // char* response_ptr = call_endpoint(router, http_request);
-	  // sprintf(response, "%s", response_ptr);
+	  char* response = call_endpoint(router, http_request);
+	  printf("%s\n", response);
       int write_res = write(client_socket_fd, response, sizeof(response));
       if (write_res == -1) {
         log_data(ERROR, "Message was not sent\n");
