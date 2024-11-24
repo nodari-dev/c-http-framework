@@ -5,8 +5,8 @@
 #include <string.h>
 #include <sys/select.h>
 
-#include "../include/conf.h"
-#include "../include/http_types.h"
+#include "../../include/conf.h"
+#include "../../include/http/http.h"
 
 void free_http_request(struct HTTP_REQUEST *http_request);
 

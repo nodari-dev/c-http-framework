@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../include/router/router.h"
+#include "../../include/core/router.h"
+#include "../../include/http/http.h"
 
 #define MIN_FULLFILMENT_PERSENTAGE 20
 #define MAX_FULLFILMENT_PERSENTAGE 80
@@ -24,13 +25,11 @@ Node *create_node(char *key) {
   return h_item;
 }
 
-unsigned int sdbm_hash_me_dady(char *str, unsigned int length,
-                               unsigned int hmap_size) {
+unsigned int sdbm_hash_me_dady(char *str, unsigned int hmap_size) {
   unsigned int hash = 0;
   unsigned int i = 0;
-
-  for (i = 0; i < length; str++, i++) {
-    hash = (*str) + (hash << 6) + (hash << 16) - hash;
+  while (*str) {
+    hash = (*str++) + (hash << 6) + (hash << 16) - hash;
   }
 
   return hash % hmap_size;
@@ -44,9 +43,7 @@ void resize(Hashmap *hmap, unsigned int new_size) {
 
   for (int i = 0; i < hmap->size; ++i) {
     if (hmap->arr[i] != NULL) {
-      unsigned int new_hash = sdbm_hash_me_dady(
-          hmap->arr[i]->key,
-          strnlen(hmap->arr[i]->key, sizeof hmap->arr[i]->key), new_size);
+      unsigned int new_hash = sdbm_hash_me_dady(hmap->arr[i]->key, new_size);
 
       new_arr[new_hash] = hmap->arr[i];
     }
@@ -75,8 +72,8 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
 
   while (token != NULL) {
     Node *new_node = create_node(token);
-    unsigned int hash = sdbm_hash_me_dady(token, strnlen(token, sizeof token),
-                                          current_node->children->size);
+    unsigned int hash = sdbm_hash_me_dady(token, current_node->children->size);
+printf("%d\n", hash);
 
     if (current_node->children->arr[hash] == NULL) {
       current_node->children->arr[hash] = new_node;
@@ -88,6 +85,7 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
     token = strtok(NULL, "/");
   }
 
+
   if (current_node->call_methods[method] != NULL) {
     printf(
         "You are overriding existing endpoint, check your code, you dummy\n");
@@ -96,30 +94,37 @@ void add_endpoint(struct Router *r, enum HTTP_METHOD method, char *path,
   current_node->call_methods[method] = handle_response;
 }
 
-char *call_endpoint(struct Router *r, enum HTTP_METHOD method, char *path) {
-  char *buffer = strdup(path);
+char *call_endpoint(struct Router *r, struct HTTP_REQUEST *req) {
+  char *buffer = strdup(req->uri);
   char *token;
   token = strtok(buffer, "/");
   Node *current_node = r->root_node;
-  List* list = init_list();
+  List *list = init_list();
 
   while (token != NULL) {
-    unsigned int hash = sdbm_hash_me_dady(token, strnlen(token, sizeof token),
-                                          current_node->children->size);
+    unsigned int hash = sdbm_hash_me_dady(token, current_node->children->size);
 
     current_node = current_node->children->arr[hash];
-	if(current_node->dynamic == true){
-		push(list, token);
-	}
+    if (current_node == NULL) {
+      return gen_http_resp(404, NULL);
+    }
+
+    if (current_node->dynamic == true) {
+      push(list, token);
+    }
 
     token = strtok(NULL, "/");
   }
-  
-  if(list->last_index == -1){
-	  free_list(list);
+
+  if (list->last_index == -1) {
+    free_list(list);
   }
 
-  return current_node->call_methods[method](list);
+  if (current_node->call_methods[req->method] == NULL) {
+    return gen_http_resp(404, NULL);
+  }
+
+  return current_node->call_methods[req->method](list);
 }
 
 Router *init_router() {
@@ -135,11 +140,11 @@ Router *init_router() {
 }
 
 void free_router(Router *r) {
-	// PUT CODE HERE
+  // PUT CODE HERE
 }
 
 Hashmap *init_hashmap() {
-  Hashmap *hashmap = malloc(sizeof(Hashmap));
+  Hashmap *hashmap = (Hashmap *)malloc(sizeof(Hashmap));
   if (hashmap == NULL) {
     exit(1);
   }

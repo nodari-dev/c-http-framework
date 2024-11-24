@@ -7,28 +7,28 @@
 #include <unistd.h>
 
 #include "../../include/conf.h"
-#include "../../include/core/service.h"
-#include "../../include/http/http_parser.h"
-#include "../../include/logger.h"
-#include "../../include/core/request_queue.h"
-#include "../../include/core/request_reader.h"
-#include "../../include/core/thread_pool.h"
+#include "../../include/core/core.h"
+#include "../../include/http/http.h"
 #include "../../include/utils/string_builder.h"
+#include "../../include/logger.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
-WEB_Service* init_service(){
-	WEB_Service* ws = (WEB_Service*)malloc(sizeof(WEB_Service));
+Serv* init_service(){
+	Serv* ws = (Serv*)malloc(sizeof(Serv));
 	if(ws == NULL){
 		perror("web service init");
 		exit(1);
 	}
 
+	Router* router = init_router();
+	ws->router = router;
+
 	return ws;
 }
 
-void start_service() {
+void start_service(Serv* service) {
   struct sockaddr_in host_address;
   host_address.sin_family = AF_INET;
   host_address.sin_port = htons(PORT);
@@ -50,7 +50,7 @@ void start_service() {
     exit(1);
   }
 
-  Request_Queue *request_queue = createQueue();
+  Q *request_queue = createQueue();
   Worker_Args *worker_args = (Worker_Args *)malloc(sizeof(Worker_Args));
   if (worker_args == NULL) {
     perror("Worker_Args malloc");
@@ -60,7 +60,8 @@ void start_service() {
   worker_args->cond = &cond;
   worker_args->mutex = &mutex;
   worker_args->q = request_queue;
-  T_Pool *t_pool = init_thread_pool(worker_args);
+  worker_args->r = service->router;
+  TPL *t_pool = init_thread_pool(worker_args);
 
   String_Builder *sb = init_string_builder();
   if (sb == NULL) {

@@ -2,6 +2,9 @@
 #include "../http/http_types.h"
 #include "../utils/array_list.h"
 
+#ifndef _ROUTER
+#define _ROUTER
+
 typedef struct Node {
   struct Hashmap *children;
   char *(*call_methods[4])(List*);
@@ -28,3 +31,5 @@ void free_router(Router *);
 
 void add_endpoint(struct Router *, enum HTTP_METHOD, char *, char *(*handle_response)());
 char *call_endpoint(struct Router*, HTTP_REQUEST*);
+
+#endif

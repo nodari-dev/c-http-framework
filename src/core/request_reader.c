@@ -6,15 +6,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../include/conf.h"
-#include "../include/errors.h"
-#include "../include/request_queue.h"
-
-#include "../include/conf.h"
+#include "../../include/conf.h"
+#include "../../include/core/request_queue.h"
 
 char *read_request(int client_socket_fd) {
-  int predefined_buffer_size = BUFFER_FOR_READ;
-  char *buffer = malloc(predefined_buffer_size);
+  char *buffer = malloc(sizeof(char) * BUFFER_FOR_READ);
   int total_buffer_size = 0;
   int bytes_read;
 
@@ -27,16 +23,15 @@ char *read_request(int client_socket_fd) {
   // NOTE: predefined_buffer_size - total_buffer_size - size left
   while (1) {
     bytes_read = recv(client_socket_fd, buffer + total_buffer_size,
-                      predefined_buffer_size - total_buffer_size, 0);
+                      BUFFER_FOR_READ - total_buffer_size, 0);
 
     if (bytes_read <= 0) {
 		break;
     }
 
     total_buffer_size += bytes_read;
-    if (total_buffer_size >= predefined_buffer_size) {
-      predefined_buffer_size *= 2;
-      char *new_buffer = realloc(buffer, predefined_buffer_size);
+    if (total_buffer_size >= BUFFER_FOR_READ) {
+      char *new_buffer = realloc(buffer, BUFFER_FOR_READ * 2);
 
       if (new_buffer == NULL) {
         perror("new_buffer error realloc");

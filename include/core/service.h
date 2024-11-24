@@ -1,9 +1,9 @@
 #include "./router.h"
 
-typedef struct WEB_Service{
+typedef struct Serv{
 	Router* router;
 	char* logger_path;
-} WEB_Service;
+} Serv;
 
-WEB_Service* init_service();
-void start_service();
+Serv* init_service();
+void start_service(Serv*);

@@ -1,5 +1,5 @@
 run:
-	cc src/utils/string_builder.c  src/http_types.c src/http_parser.c src/logger.c src/request_queue.c src/request_reader.c src/thread_pool.c src/main.c -o bin/server
+	cc src/utils/* src/logger.c src/http/*  src/core/* src/playground.c -o bin/server
 	./bin/server
 
 fun:

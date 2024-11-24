@@ -3,25 +3,23 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "../include/conf.h"
-#include "../include/http_parser.h"
-#include "../include/logger.h"
-#include "../include/request_queue.h"
-#include "../include/request_reader.h"
-#include "../include/thread_pool.h"
-#include "../include/utils/string_builder.h"
+#include "../../include/conf.h"
+#include "../../include/utils/string_builder.h"
+#include "../../include/logger.h"
+#include "../../include/http/http.h"
+#include "../../include/core/core.h"
 
 void *worker_thread(void *args);
 
-T_Pool *init_thread_pool(Worker_Args *worker_args) {
-  T_Pool *pool = (T_Pool *)malloc(sizeof(T_Pool));
+TPL *init_thread_pool(Worker_Args *args) {
+  TPL *pool = (TPL *)malloc(sizeof(TPL));
   if (pool == NULL) {
     perror("T_Pool malloc");
     exit(1);
   }
 
   for (int i = 0; i < MAX_T; ++i) {
-    if (pthread_create(&pool->workers[i], NULL, worker_thread, worker_args) !=
+    if (pthread_create(&pool->workers[i], NULL, worker_thread, args) !=
         0) {
       perror("Thread creating failure\n");
       exit(1);
@@ -31,11 +29,13 @@ T_Pool *init_thread_pool(Worker_Args *worker_args) {
   return pool;
 }
 
-void shutdown_thread_pool(T_Pool *pool) {}
+void shutdown_thread_pool(TPL *pool) {}
 
 void *worker_thread(void *args) {
   Worker_Args *worker_args = (Worker_Args *)args;
-  Request_Queue *request_queue = worker_args->q;
+  Q *request_queue = worker_args->q;
+  Router *router = worker_args->r;
+
   pthread_mutex_t *mutex = worker_args->mutex;
   pthread_cond_t *cond = worker_args->cond;
   String_Builder *sb = init_string_builder();
@@ -52,7 +52,6 @@ void *worker_thread(void *args) {
       char *buffer = read_request(client_socket_fd);
 
       HTTP_REQUEST *http_request = parse_http_request(buffer);
-	  printf("%u", http_request->method);
       if (http_request) {
         append_chars(sb, http_method_to_str(http_request->method));
         append_chars(sb, "");
@@ -63,24 +62,25 @@ void *worker_thread(void *args) {
         free_string_builder(sb);
       } else {
         log_data(ERROR, "Couldn't parse request");
+
+		// TODO: ADD 500
       }
 
-      free(buffer);
-      buffer = NULL;
-      free_http_request(http_request);
-
-      char response[2048];
-      sprintf(response, "HTTP/1.1 200 OK\r\n"
+      char response[2048] = "HTTP/1.1 200 OK\r\n"
                         "Content-Type: text/html\r\n"
                         "Content-Length: 26\r\n"
                         "\r\n"
-                        "<h1>you suck</h1>");
+                        "<h1>POST you suck</h1>";
 
+	  // char* response_ptr = call_endpoint(router, http_request);
+	  // sprintf(response, "%s", response_ptr);
       int write_res = write(client_socket_fd, response, sizeof(response));
       if (write_res == -1) {
         log_data(ERROR, "Message was not sent\n");
       }
       close(client_socket_fd);
+      free(buffer);
+      free_http_request(http_request);
     }
   }
   return NULL;
