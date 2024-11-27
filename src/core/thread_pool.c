@@ -4,10 +4,10 @@
 #include <unistd.h>
 
 #include "../../include/conf.h"
-#include "../../include/utils/string_builder.h"
-#include "../../include/logger.h"
-#include "../../include/http/http.h"
 #include "../../include/core/core.h"
+#include "../../include/http/http.h"
+#include "../../include/logger.h"
+#include "../../include/utils/string_builder.h"
 
 void *worker_thread(void *args);
 
@@ -19,8 +19,7 @@ TPL *init_thread_pool(Worker_Args *args) {
   }
 
   for (int i = 0; i < MAX_T; ++i) {
-    if (pthread_create(&pool->workers[i], NULL, worker_thread, args) !=
-        0) {
+    if (pthread_create(&pool->workers[i], NULL, worker_thread, args) != 0) {
       perror("Thread creating failure\n");
       exit(1);
     }
@@ -63,12 +62,13 @@ void *worker_thread(void *args) {
       } else {
         log_data(ERROR, "Couldn't parse request");
 
-		// TODO: ADD 500
+        // TODO: ADD 500
       }
 
-
-	  char* response = call_endpoint(router, http_request);
-	  printf("%s\n", response);
+      char *response_end = call_endpoint(router, http_request);
+      char response[2048];
+	  // check size if out of bounds or should be smaller
+      sprintf(response, "%s", response_end);
       int write_res = write(client_socket_fd, response, sizeof(response));
       if (write_res == -1) {
         log_data(ERROR, "Message was not sent\n");
